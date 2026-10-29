@@ -43,7 +43,7 @@ runs:
   using: composite
   steps:
     - name: Set up Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v4.4.0
       with:
         node-version: 22
 

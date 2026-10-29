@@ -16,10 +16,10 @@ jobs:
     outputs:
       version: ${{ steps.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
           cache: npm
@@ -50,10 +50,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
@@ -72,22 +72,22 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/metadata-action@v5
+      - uses: docker/metadata-action@v5.10.0
         id: meta
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v6.19.2
         with:
           context: .
           push: true
@@ -96,14 +96,37 @@ jobs:
           provenance: mode=max
           sbom: true
 
-  github-release:
-    name: Create the GitHub release
+  major-tag:
+    name: Move the major version tag
     needs: [verify, npm, container]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
+        with:
+          fetch-depth: 0
+      # Consumers of the GitHub Action write "@v0" and get the newest 0.x
+      # release without editing their workflow on every release.
+      - name: Point vMAJOR at this release
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          major="v${VERSION%%.*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --force --annotate "$major" --message "Release $GITHUB_REF_NAME"
+          git push --force origin "refs/tags/$major"
+
+  github-release:
+    name: Create the GitHub release
+    needs: [verify, npm, container, major-tag]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
       - name: Take the release notes from the changelog

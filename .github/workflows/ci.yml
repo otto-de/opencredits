@@ -22,10 +22,10 @@ jobs:
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -35,20 +35,46 @@ jobs:
       - run: npm run lint
       - run: npm test
 
+  hygiene:
+    name: No build output in git
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.4.0
+        with:
+          persist-credentials: false
+      # Generated files must never be committed: they go stale, bloat the
+      # repository and fail the REUSE check because they carry no license
+      # header. .gitignore does not help once a file is already tracked.
+      - name: Check that no generated or editor files are tracked
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files | grep -E '^(dist|coverage|demo-output|node_modules|opencredits-data|opencredits-site)/|\.iml$|^\.idea/|^\.vscode/' || true)"
+          if [ -n "$tracked" ]; then
+            echo "::error::These generated or editor files are tracked by git and must be removed."
+            echo "$tracked"
+            echo ""
+            echo "Fix with:"
+            echo "  git rm -r --cached dist demo-output coverage opencredits-data opencredits-site 2>/dev/null || true"
+            echo "  git rm --cached '*.iml' 2>/dev/null || true"
+            echo "  git commit -m 'chore: stop tracking generated files'"
+            exit 1
+          fi
+          echo "No generated files are tracked."
+
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: fsfe/reuse-action@v5
+      - uses: fsfe/reuse-action@v5.0.0
 
   container:
     name: Container image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
       - name: Build image

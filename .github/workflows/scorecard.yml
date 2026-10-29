@@ -11,18 +11,26 @@ permissions: read-all
 jobs:
   analysis:
     runs-on: ubuntu-latest
+    # A job-level permissions block replaces the top-level one completely, so
+    # every permission this job needs has to be listed here. contents: read is
+    # required by checkout and by Scorecard itself; actions: read lets Scorecard
+    # and upload-sarif read this repository's workflow runs.
     permissions:
-      security-events: write
+      actions: read
+      contents: read
       id-token: write
+      security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: ossf/scorecard-action@v2
+      # ossf/scorecard-action publishes no floating major tag such as "v2",
+      # only full versions, so this reference must name one.
+      - uses: ossf/scorecard-action@v2.5.0
         with:
           results_file: results.sarif
           results_format: sarif
           publish_results: true
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@v3.39.1
         with:
           sarif_file: results.sarif
