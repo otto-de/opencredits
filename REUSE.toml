@@ -1,7 +1,43 @@
 version = 1
 
+# In REUSE's glob syntax "**" expands to ".*", so "**/*.md" only matches files
+# inside a directory and never one at the repository root. Every pattern below
+# is therefore listed twice: once for the root and once for nested paths.
+# Source files carry their own SPDX headers and do not rely on this file.
+
 [[annotations]]
-path = ["**/*.md", "**/*.json", "**/*.yml", "**/*.yaml", ".editorconfig", ".gitignore", ".dockerignore", ".nvmrc", "Dockerfile", "NOTICE", "OSSMETADATA", "MAINTAINERS", ".github/CODEOWNERS", "test/fixtures/**"]
+path = [
+  "*.md",
+  "**/*.md",
+  "*.json",
+  "**/*.json",
+  "*.jsonc",
+  "**/*.jsonc",
+  "*.yml",
+  "**/*.yml",
+  "*.yaml",
+  "**/*.yaml",
+  "*.txt",
+  "**/*.txt",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 OpenCredits contributors"
+SPDX-License-Identifier = "Apache-2.0"
+
+# Files without an extension, and dotfiles, which the patterns above miss.
+[[annotations]]
+path = [
+  ".dockerignore",
+  ".editorconfig",
+  ".gitignore",
+  ".nvmrc",
+  "Dockerfile",
+  "LICENSE",
+  "MAINTAINERS",
+  "NOTICE",
+  "OSSMETADATA",
+  ".github/CODEOWNERS",
+]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 OpenCredits contributors"
 SPDX-License-Identifier = "Apache-2.0"
