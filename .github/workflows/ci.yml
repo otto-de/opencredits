@@ -68,7 +68,7 @@ jobs:
       - uses: actions/checkout@v4.4.0
         with:
           persist-credentials: false
-      - uses: fsfe/reuse-action@v5.0.0
+      - uses: fsfe/reuse-action@v6.0.0
 
   container:
     name: Container image
