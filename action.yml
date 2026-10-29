@@ -1,0 +1,89 @@
+name: OpenCredits
+description: Scan the repositories that ship your product and render an accessible open source license page.
+author: OpenCredits contributors
+branding:
+  icon: file-text
+  color: blue
+
+inputs:
+  command:
+    description: "run, scan, render or validate"
+    default: run
+  config:
+    description: Path to the OpenCredits configuration file
+    default: opencredits.config.json
+  data-dir:
+    description: Private output directory (dataset, SBOM, audit report). Never publish it.
+    default: opencredits-data
+  site-dir:
+    description: Public output directory containing index.html
+    default: opencredits-site
+  dataset:
+    description: Dataset file, required for the render command
+    default: ""
+  inputs:
+    description: Dataset files or directories to combine, required for the merge command. Comma separated.
+    default: ""
+  install-syft:
+    description: Install Syft to cover ecosystems other than npm
+    default: "true"
+  syft-version:
+    description: Syft release to install (verified against the release checksums)
+    default: "1.18.1"
+
+outputs:
+  site-dir:
+    description: Directory containing the rendered page
+    value: ${{ inputs.site-dir }}
+  data-dir:
+    description: Directory containing private outputs
+    value: ${{ inputs.data-dir }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Build OpenCredits
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --ignore-scripts --no-audit --no-fund
+        npx tsc -p tsconfig.json
+
+    - name: Install Syft
+      if: inputs.install-syft == 'true'
+      shell: bash
+      env:
+        SYFT_VERSION: ${{ inputs.syft-version }}
+      run: |
+        set -euo pipefail
+        case "$(uname -m)" in x86_64) arch=amd64 ;; aarch64|arm64) arch=arm64 ;; *) echo "Unsupported architecture"; exit 1 ;; esac
+        file="syft_${SYFT_VERSION}_linux_${arch}.tar.gz"
+        base="https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}"
+        dir="$(mktemp -d)"
+        curl -fsSL -o "${dir}/${file}" "${base}/${file}"
+        curl -fsSL -o "${dir}/checksums.txt" "${base}/syft_${SYFT_VERSION}_checksums.txt"
+        (cd "${dir}" && grep " ${file}\$" checksums.txt | sha256sum -c -)
+        tar -xzf "${dir}/${file}" -C "${dir}" syft
+        install -m 0755 "${dir}/syft" "${RUNNER_TEMP}/syft"
+        echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+    - name: Run OpenCredits
+      shell: bash
+      env:
+        INPUT_COMMAND: ${{ inputs.command }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_DATA_DIR: ${{ inputs.data-dir }}
+        INPUT_SITE_DIR: ${{ inputs.site-dir }}
+        INPUT_DATASET: ${{ inputs.dataset }}
+        INPUT_INPUTS: ${{ inputs.inputs }}
+      run: |
+        set -euo pipefail
+        args=("${INPUT_COMMAND}" --config "${INPUT_CONFIG}" --data-dir "${INPUT_DATA_DIR}" --site-dir "${INPUT_SITE_DIR}")
+        if [ -n "${INPUT_DATASET}" ]; then args+=(--dataset "${INPUT_DATASET}"); fi
+        if [ -n "${INPUT_INPUTS}" ]; then args+=(--inputs "${INPUT_INPUTS}"); fi
+        node "${GITHUB_ACTION_PATH}/dist/src/cli.js" "${args[@]}"

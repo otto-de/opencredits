@@ -1,0 +1,56 @@
+{
+  "$schema": "../../schema/opencredits.config.schema.json",
+  "source": {
+    "type": "github",
+    "apiUrl": "https://api.github.com",
+    "organizations": [
+      "otto-de"
+    ],
+    "auth": "app"
+  },
+  "relevance": {
+    "ciWindowDays": 30,
+    "deploymentDomains": [
+      "example.com"
+    ],
+    "maxDeploymentFilesToInspect": 40,
+    "allowlist": [],
+    "denylist": []
+  },
+  "extraction": {
+    "extractors": [
+      "npm",
+      "syft"
+    ],
+    "includeDevDependencies": false,
+    "mode": "manifests"
+  },
+  "enrichment": {
+    "npmRegistry": {
+      "enabled": true,
+      "url": "https://registry.npmjs.org"
+    },
+    "curationsFile": "curations.json"
+  },
+  "output": {
+    "title": "Open source licenses",
+    "language": "en",
+    "showVersions": false,
+    "stripEmails": true,
+    "accentColor": "#1F5F8B",
+    "accentColorDark": "#8CC4EA"
+  },
+  "guard": {
+    "previousDatasetPath": "previous/dataset.json",
+    "maxPackageDropPercent": 30
+  },
+  "concurrency": 4,
+  "policy": {
+    "enabled": true,
+    "guidelinesUrl": "https://github.example.com/opensource/blob/main/_docs/licensing.md",
+    "projectType": "distributed",
+    "ruleset": "conservative",
+    "failOn": "forbidden",
+    "exceptions": []
+  }
+}

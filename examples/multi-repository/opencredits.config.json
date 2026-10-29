@@ -1,0 +1,15 @@
+{
+  "$schema": "../../schema/opencredits.config.schema.json",
+  "source": {
+    "type": "repositories",
+    "repositories": [
+      "otto-de/shop-web",
+      "otto-de/shop-checkout",
+      "otto-de/shop-design-system"
+    ],
+    "auth": "token"
+  },
+  "extraction": { "extractors": ["npm", "syft"] },
+  "output": { "title": "Open source licenses", "language": "en" },
+  "policy": { "projectType": "distributed", "failOn": "forbidden" }
+}

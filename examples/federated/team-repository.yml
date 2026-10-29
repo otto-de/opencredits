@@ -1,0 +1,31 @@
+# Each participating repository scans itself and publishes its dataset.
+name: Credits fragment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: otto-de/opencredits@v0.2.1
+        with:
+          command: scan
+          config: opencredits.config.json
+
+      # The dataset carries this repository's name, so the merged report shows
+      # which repository each library came from.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credits-dataset
+          path: opencredits-data/dataset.json
+          retention-days: 30

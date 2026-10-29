@@ -1,0 +1,24 @@
+{
+  "curations": [
+    {
+      "match": { "name": "example-package", "ecosystem": "npm" },
+      "set": { "copyrights": ["Copyright (c) 2021 Example Author"] },
+      "reason": "Package ships no LICENSE file; copyright holder confirmed in the upstream README"
+    },
+    {
+      "match": { "name": "internal-build-helper", "ecosystem": "npm" },
+      "exclude": true,
+      "reason": "Used only at build time and not shipped to users"
+    }
+  ],
+  "additions": [
+    {
+      "name": "getopt",
+      "license": "BSD-3-Clause",
+      "copyrights": ["Copyright (c) 1987, 1993, 1994 The Regents of the University of California"],
+      "homepage": "https://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/stdlib/",
+      "licenseTextFile": "licenses/getopt.txt",
+      "reason": "Source file copied into a repository; no package manager declares it"
+    }
+  ]
+}

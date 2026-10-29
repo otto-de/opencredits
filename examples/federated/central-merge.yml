@@ -1,0 +1,48 @@
+# Combines the datasets published by each repository into one page.
+name: Credits page
+
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Collect datasets from the participating repositories
+        env:
+          GH_TOKEN: ${{ secrets.OPENCREDITS_READ_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p fragments
+          for repo in otto-de/shop-web otto-de/shop-checkout otto-de/shop-design-system; do
+            name="${repo##*/}"
+            # Downloads the newest successful "Credits fragment" run of that repository.
+            if gh run download --repo "$repo" --name credits-dataset --dir "fragments/$name"; then
+              mv "fragments/$name/dataset.json" "fragments/$name.json"
+              rmdir "fragments/$name"
+            else
+              echo "::warning::No dataset available for $repo; it will be missing from the page"
+            fi
+            rm -rf "fragments/$name"
+          done
+          ls -l fragments
+
+      - uses: otto-de/opencredits@v0.2.1
+        with:
+          command: merge
+          config: opencredits.config.json
+          inputs: fragments
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credits-page
+          path: opencredits-site

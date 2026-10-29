@@ -1,0 +1,65 @@
+# Copy to .github/workflows/license-page.yml in a central repository.
+# Nothing needs to change in the scanned repositories.
+name: Open source license page
+
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: license-page
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Restore the previous dataset for the publish guard
+        uses: actions/cache/restore@v4
+        with:
+          path: previous
+          key: opencredits-dataset-${{ github.run_id }}
+          restore-keys: opencredits-dataset-
+
+      - name: Run OpenCredits
+        uses: otto-de/opencredits@v0.2.1
+        env:
+          OPENCREDITS_GITHUB_APP_ID: ${{ vars.OPENCREDITS_GITHUB_APP_ID }}
+          OPENCREDITS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.OPENCREDITS_GITHUB_APP_PRIVATE_KEY }}
+        with:
+          config: opencredits.config.json
+
+      - name: Keep this dataset for the next run
+        run: mkdir -p previous && cp opencredits-data/dataset.json previous/dataset.json
+
+      - uses: actions/cache/save@v4
+        with:
+          path: previous
+          key: opencredits-dataset-${{ github.run_id }}
+
+      - name: Upload private audit data (internal only)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencredits-audit
+          path: opencredits-data
+          retention-days: 30
+
+      - name: Upload public page
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencredits-site
+          path: opencredits-site
+          retention-days: 7
+
+  # Add a deploy job for your hosting (CDN, object storage, GitHub Pages)
+  # that publishes only the opencredits-site artifact at a stable URL.

@@ -1,0 +1,6 @@
+OpenCredits
+Copyright 2026 OTTO GmbH & Co KG and the OpenCredits contributors
+
+This product is licensed under the Apache License, Version 2.0.
+It has no third-party runtime dependencies. The container image additionally
+ships Syft (https://github.com/anchore/syft), licensed under Apache-2.0.

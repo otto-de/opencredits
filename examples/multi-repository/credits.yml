@@ -1,0 +1,31 @@
+# One app built from several repositories, scanned from one place.
+# Copy to .github/workflows/credits.yml in a repository that can read all of them.
+name: Credits page
+
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: otto-de/opencredits@v0.2.1
+        env:
+          # A token or GitHub App that can read every listed repository.
+          OPENCREDITS_GITHUB_TOKEN: ${{ secrets.OPENCREDITS_READ_TOKEN }}
+        with:
+          config: opencredits.config.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: credits-page
+          path: opencredits-site

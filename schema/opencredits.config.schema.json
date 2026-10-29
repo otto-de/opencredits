@@ -1,0 +1,412 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/your-org/opencredits/schema/opencredits.config.schema.json",
+  "title": "OpenCredits configuration",
+  "description": "Configuration for scanning repositories and rendering the open source license page. OpenCredits also validates this at runtime, including WCAG contrast of the accent colors.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "source": {
+      "description": "Where repositories come from: a whole GitHub organization, an explicit list of repositories, or local directories.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "organizations"
+          ],
+          "properties": {
+            "type": {
+              "const": "github"
+            },
+            "apiUrl": {
+              "type": "string",
+              "format": "uri",
+              "default": "https://api.github.com",
+              "description": "Use https://HOST/api/v3 for GitHub Enterprise Server."
+            },
+            "organizations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"
+              }
+            },
+            "auth": {
+              "enum": [
+                "app",
+                "token"
+              ],
+              "default": "app",
+              "description": "\"app\" is recommended: short-lived, read-only installation tokens."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "repositories"
+          ],
+          "properties": {
+            "type": {
+              "const": "repositories"
+            },
+            "apiUrl": {
+              "type": "string",
+              "format": "uri",
+              "default": "https://api.github.com"
+            },
+            "repositories": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+              },
+              "description": "Explicit \"owner/name\" list. Listing a repository means it is relevant, so the relevance filter is skipped."
+            },
+            "auth": {
+              "enum": [
+                "app",
+                "token"
+              ],
+              "default": "app"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "local"
+            },
+            "paths": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "."
+              ],
+              "description": "Directories to scan, relative to this file."
+            }
+          }
+        }
+      ]
+    },
+    "relevance": {
+      "description": "Rules that decide which GitHub repositories contribute to the product.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "excludeArchived": {
+          "type": "boolean",
+          "default": true
+        },
+        "excludeForks": {
+          "type": "boolean",
+          "default": true
+        },
+        "ciWindowDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3650,
+          "default": 30,
+          "description": "A successful CI run on the default branch within this window makes a repository relevant."
+        },
+        "deploymentDomains": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Deployment files referencing these domains or their subdomains make a repository relevant."
+        },
+        "deploymentFilePatterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns for deployment files (Kubernetes, Helm, Terraform). Defaults cover common layouts."
+        },
+        "maxDeploymentFilesToInspect": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000,
+          "default": 40
+        },
+        "allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+          },
+          "default": [],
+          "description": "Always scanned (unless also denylisted)."
+        },
+        "denylist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+          },
+          "default": [],
+          "description": "Never scanned."
+        }
+      }
+    },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "extractors": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "npm",
+              "syft"
+            ]
+          },
+          "default": [
+            "npm",
+            "syft"
+          ]
+        },
+        "includeDevDependencies": {
+          "type": "boolean",
+          "default": false
+        },
+        "mode": {
+          "enum": [
+            "manifests",
+            "full"
+          ],
+          "default": "manifests",
+          "description": "\"manifests\" extracts only dependency manifests and lockfiles from each repository archive."
+        },
+        "syftPath": {
+          "type": "string",
+          "default": "syft"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 3600,
+          "default": 300
+        },
+        "maxArchiveMB": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000,
+          "default": 500
+        },
+        "maxExtractedMB": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 1000
+        }
+      }
+    },
+    "enrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "npmRegistry": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            },
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "default": "https://registry.npmjs.org"
+            },
+            "allowedTarballHosts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Defaults to the registry host."
+            },
+            "maxTarballMB": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "default": 50
+            }
+          }
+        },
+        "curationsFile": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Relative path to a curations file."
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "intro": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "language": {
+          "enum": [
+            "en",
+            "de"
+          ],
+          "default": "en"
+        },
+        "showVersions": {
+          "type": "boolean",
+          "default": false
+        },
+        "stripEmails": {
+          "type": "boolean",
+          "default": true
+        },
+        "accentColor": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "default": "#1F5F8B",
+          "description": "Needs 4.5:1 contrast on #FFFFFF."
+        },
+        "accentColorDark": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "default": "#8CC4EA",
+          "description": "Needs 4.5:1 contrast on #16191D."
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Checks each dependency's license against a category ruleset and reports the ones that need a decision.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "guidelinesUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null,
+          "description": "Link to your organisation's own license guidelines. Findings in the audit report point at it, so readers check the authoritative document rather than this tool's defaults."
+        },
+        "projectType": {
+          "enum": [
+            "internal",
+            "distributed"
+          ],
+          "default": "distributed",
+          "description": "\"distributed\" covers anything shipped to users or run as a public service, where copyleft obligations trigger. \"internal\" is for software that never leaves the company."
+        },
+        "ruleset": {
+          "enum": [
+            "standard",
+            "conservative"
+          ],
+          "default": "conservative",
+          "description": "\"conservative\" (the default) treats the Lesser GPL as strong copyleft, matching license guidance that forbids the whole GPL family in distributed software. \"standard\" treats it as weak copyleft."
+        },
+        "failOn": {
+          "enum": [
+            "none",
+            "forbidden",
+            "review"
+          ],
+          "default": "none",
+          "description": "Exit code 4 when findings of this severity remain. The page is still written."
+        },
+        "overrides": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "permissive",
+              "weak-copyleft",
+              "strong-copyleft",
+              "network-copyleft",
+              "non-free",
+              "case-by-case",
+              "unknown"
+            ]
+          },
+          "description": "License identifier to category, overriding the ruleset."
+        },
+        "exceptions": {
+          "type": "array",
+          "description": "Packages whose findings are accepted. They stay in the report as accepted risks.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "package",
+              "reason"
+            ],
+            "properties": {
+              "package": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "previousDatasetPath": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "maxPackageDropPercent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 30
+        }
+      }
+    },
+    "concurrency": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32,
+      "default": 4
+    }
+  }
+}

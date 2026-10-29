@@ -1,0 +1,46 @@
+{
+  "name": "opencredits",
+  "version": "0.3.0",
+  "description": "Collects the open source dependencies of one repository or many, checks them against your license policy, and publishes an accessible credits page.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "opencredits": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "schema",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "license",
+    "compliance",
+    "sbom",
+    "spdx",
+    "open-source",
+    "third-party-notices",
+    "attribution",
+    "credits"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "npm run build && node --test --test-reporter=spec \"dist/test/**/*.test.js\"",
+    "clean": "rm -rf dist",
+    "demo": "npm run build && node dist/src/cli.js run --config examples/demo-shop/opencredits.config.json --data-dir demo-output/data --site-dir demo-output/site",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^6.0.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

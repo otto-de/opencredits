@@ -1,0 +1,24 @@
+# Copy to .github/workflows/license-page.yml in the repository you want a page for.
+name: License page
+
+on:
+  push:
+    branches: [main]
+    paths: ["**/package-lock.json", "**/go.sum", "**/pom.xml", "**/*.lock", "opencredits.config.json"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: otto-de/opencredits@v0.2.1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: license-page
+          path: opencredits-site

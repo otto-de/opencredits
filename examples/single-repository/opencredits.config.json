@@ -1,0 +1,6 @@
+{
+  "$schema": "../../schema/opencredits.config.schema.json",
+  "source": { "type": "local", "paths": ["."] },
+  "extraction": { "extractors": ["npm", "syft"] },
+  "output": { "title": "Third-party licenses", "language": "en" }
+}

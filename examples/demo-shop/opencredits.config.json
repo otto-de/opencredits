@@ -1,0 +1,25 @@
+{
+  "$schema": "../../schema/opencredits.config.schema.json",
+  "source": {
+    "type": "local",
+    "paths": [
+      "."
+    ]
+  },
+  "extraction": {
+    "extractors": [
+      "npm"
+    ]
+  },
+  "output": {
+    "title": "Open-Source-Lizenzen",
+    "language": "de"
+  },
+  "guard": {
+    "previousDatasetPath": "../../demo-output/previous/dataset.json"
+  },
+  "policy": {
+    "projectType": "distributed",
+    "failOn": "none"
+  }
+}
