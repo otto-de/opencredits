@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+opencredits-data/
+opencredits-site/
+*.pem
+.env
+.env.*
+demo-output/
