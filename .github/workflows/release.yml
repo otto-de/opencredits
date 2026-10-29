@@ -1,0 +1,122 @@
+name: Release
+
+# Publishes a release when a version tag is pushed. The tag must match the
+# version in package.json, which the job verifies before publishing anything.
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck && npm run lint && npm test
+      - name: The tag and package.json must agree
+        id: check
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$pkg" ]; then
+            echo "::error::Tag v$tag does not match package.json version $pkg"
+            exit 1
+          fi
+          grep -q "^## \[$pkg\]" CHANGELOG.md || {
+            echo "::error::CHANGELOG.md has no section for $pkg"
+            exit 1
+          }
+          echo "version=$pkg" >> "$GITHUB_OUTPUT"
+
+  npm:
+    name: Publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci --ignore-scripts
+      # Publishing with provenance records which workflow and commit built it.
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  container:
+    name: Publish the container image
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: mode=max
+          sbom: true
+
+  github-release:
+    name: Create the GitHub release
+    needs: [verify, npm, container]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Take the release notes from the changelog
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          awk -v v="## [$VERSION]" '
+            index($0, v) == 1 { capture = 1; next }
+            capture && /^## \[/ { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+          test -s release-notes.md
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file release-notes.md

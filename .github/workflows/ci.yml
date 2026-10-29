@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Before the first release, pin every action to a full commit SHA
+# (for example with `npx pin-github-action .github/workflows/*.yml`).
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm audit signatures
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+
+  reuse:
+    name: REUSE compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: fsfe/reuse-action@v5
+
+  container:
+    name: Container image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build image
+        run: docker build --tag opencredits:ci .
+      - name: Smoke test
+        run: docker run --rm opencredits:ci --version
