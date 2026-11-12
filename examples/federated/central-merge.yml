@@ -36,7 +36,7 @@ jobs:
           done
           ls -l fragments
 
-      - uses: otto-de/opencredits@v0.2.1
+      - uses: otto-de/opencredits@v1
         with:
           command: merge
           config: opencredits.config.json

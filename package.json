@@ -1,6 +1,6 @@
 {
-  "name": "opencredits",
-  "version": "0.3.0",
+  "name": "@otto-de/opencredits",
+  "version": "1.0.0",
   "description": "Collects the open source dependencies of one repository or many, checks them against your license policy, and publishes an accessible credits page.",
   "license": "Apache-2.0",
   "type": "module",
@@ -27,6 +27,17 @@
     "attribution",
     "credits"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/otto-de/opencredits.git"
+  },
+  "homepage": "https://github.com/otto-de/opencredits#readme",
+  "bugs": {
+    "url": "https://github.com/otto-de/opencredits/issues"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",

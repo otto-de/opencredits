@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-11-12
+
+First stable release. The project lifecycle in `OSSMETADATA` moves from
+`incubation` to `active`.
+
+### Added
+
+- The release pipeline publishes the npm package to GitHub Packages as
+  `@otto-de/opencredits`, authenticating with the built-in `GITHUB_TOKEN`, and
+  the container image to `ghcr.io/otto-de/opencredits`.
+
+### Changed
+
+- **The package is now named `@otto-de/opencredits`.** GitHub Packages requires
+  the scope to match the repository owner. The command itself is still
+  `opencredits`.
+- Installing from GitHub Packages requires a personal access token with
+  `read:packages`, even though the package is public. The README documents the
+  one-time `.npmrc` setup, and points at the GitHub Action and the container
+  image for use without credentials.
+- Consumers of the GitHub Action reference `otto-de/opencredits@v1`.
+
+### Fixed
+
+- Pinned `typescript` to `~6.0.0`. `typescript-eslint` 8.x declares
+  `typescript: ">=4.8.4 <6.1.0"`, so a bump to 6.1 or 7 breaks `npm ci` with
+  ERESOLVE. Dependabot is configured to skip major and minor TypeScript bumps
+  until typescript-eslint supports them.
+- The Scorecard workflow no longer gates on a repository-visibility check. The
+  check could silently skip the analysis while the job still reported success,
+  which left the README badge unpopulated.
+
 ## [0.3.0] - 2026-10-28
 
 ### Changed

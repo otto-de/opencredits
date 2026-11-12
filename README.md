@@ -101,7 +101,27 @@ Add `opencredits.config.json` to your repository:
 Run it:
 
 ```sh
-npx opencredits run
+npx @otto-de/opencredits run
+```
+
+The package lives on GitHub Packages, which requires a token even for public
+packages. Create a [personal access token](https://github.com/settings/tokens)
+with the `read:packages` scope and add to `~/.npmrc`:
+
+```ini
+@otto-de:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+
+To avoid that setup entirely, use the GitHub Action or the container image,
+which need no credentials:
+
+```yaml
+- uses: otto-de/opencredits@v1
+```
+
+```sh
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/otto-de/opencredits:1 run
 ```
 
 Open `opencredits-site/index.html`. That is the finished page.

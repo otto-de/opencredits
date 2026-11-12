@@ -31,7 +31,7 @@ jobs:
           restore-keys: opencredits-dataset-
 
       - name: Run OpenCredits
-        uses: otto-de/opencredits@v0.2.1
+        uses: otto-de/opencredits@v1
         env:
           OPENCREDITS_GITHUB_APP_ID: ${{ vars.OPENCREDITS_GITHUB_APP_ID }}
           OPENCREDITS_GITHUB_APP_PRIVATE_KEY: ${{ secrets.OPENCREDITS_GITHUB_APP_PRIVATE_KEY }}
