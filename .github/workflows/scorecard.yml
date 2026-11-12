@@ -5,6 +5,7 @@ on:
     branches: [main]
   schedule:
     - cron: "23 5 * * 2"
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -14,7 +15,8 @@ jobs:
     # A job-level permissions block replaces the top-level one completely, so
     # every permission this job needs has to be listed here.
     permissions:
-      # Publishing the results.
+      # publish_results needs id-token: write, which is what makes the badge
+      # work. security-events: write uploads the SARIF to code scanning.
       security-events: write
       id-token: write
       # Reads Scorecard needs for its GraphQL queries and SAST detection.
@@ -31,34 +33,19 @@ jobs:
         with:
           persist-credentials: false
 
-      # Scorecard analyses public repositories, and uploading its results uses
-      # code scanning, which needs a public repository or GitHub Advanced
-      # Security. Skip it with a notice while the repository is private; it runs
-      # automatically once the repository is public.
-      - name: Check whether the repository is public
-        id: scanning
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          visibility="$(gh api "repos/${GITHUB_REPOSITORY}" --jq .visibility 2>/dev/null || echo unknown)"
-          if [ "$visibility" = "public" ]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice title=Scorecard skipped::OpenSSF Scorecard reports on public repositories. This repository is ${visibility}, so the analysis was skipped. It runs automatically once the repository is public."
-          fi
-
       # ossf/scorecard-action publishes no floating major tag such as "v2",
       # only full versions, so this reference must name one.
       - uses: ossf/scorecard-action@v2.5.0
-        if: steps.scanning.outputs.available == 'true'
         with:
           results_file: results.sarif
           results_format: sarif
+          # Required for the README badge. Only works on a public repository.
           publish_results: true
 
+      # Keeps the run green if code scanning is not enabled yet. Publishing the
+      # score already happened in the step above, so the badge does not depend
+      # on this upload succeeding.
       - uses: github/codeql-action/upload-sarif@v3.39.1
-        if: steps.scanning.outputs.available == 'true'
+        continue-on-error: true
         with:
           sarif_file: results.sarif
