@@ -7,3 +7,8 @@ opencredits-site/
 .env
 .env.*
 demo-output/
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
